@@ -4,14 +4,18 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+http = require('http');
+var app = express();
+var server = http.createServer(app);
+var io = require('socket.io').listen(server);
 
 var index = require('./routes/index');
 var users = require('./routes/users');
 
-var app = express();
+
 
 // view engine setup
-app.set('port', (process.env.PORT || 5000));
+app.set('port', (process.env.PORT || 3000));
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
@@ -44,11 +48,41 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+
+
+////streaming////////////////
+var scream =0;
+var tear = 0;
+io.on('connection',function(socket){
+  console.log('connected');
+  socket.emit('tick')
+
+  socket.on('scream',function(){
+    console.log('scream clicked')
+    scream+=10;
+    socket.emit('movScr',scream);
+  });
+
+  socket.on('tear',function(){
+    console.log('tears clicked')
+    tear += 10;
+    socket.emit('movTear',tear);
+  });
+
+  socket.on('tick',function(){
+    var info = [tear,scream];
+    socket.emit('tick', info);
+  });
+
+});
+
+////////////////end streaming////////////////
+
 module.exports = app;
 
 
 
-app.listen(app.get('port'), function() {
+server.listen(app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
 });
 
